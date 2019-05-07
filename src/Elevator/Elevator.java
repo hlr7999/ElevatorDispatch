@@ -37,6 +37,7 @@ class ElevatorView extends JPanel {
 		for (int i = 1; i <= Floor.totalFloor; ++i) {
 			floorButton[i] = new JButton(String.valueOf(i));
 			floorButton[i].setMargin(new Insets(1,1,1,1));
+			floorButton[i].setFocusPainted(false);
 			floorButton[i].setBackground(Color.white);
 			floorButton[i].setFont(new Font(font.getFontName(), font.getStyle(), 15));
 			floorButton[i].addActionListener(floorButtonListener);
@@ -131,7 +132,9 @@ public class Elevator {
 				state = down;
 				view.changeState(state);
 			} else {
+				floorButtonPressed[floor] = false;
 				view.changeState(doorOpen);
+				view.arriveFloor(floor);
 				arriveFloor = true;
 			}
 		}
@@ -139,7 +142,7 @@ public class Elevator {
 	
 	public void run() {
 		if (arriveFloor) {
-			changeState();
+			finishJob();
 			arriveFloor = false;
 		} else {
 			switch (state) {
@@ -177,39 +180,36 @@ public class Elevator {
 		}
 	}
 	
-	private void changeState() {
+	private void finishJob() {
 		// 上行到最高任务楼层
 		if (state == up && maxJob <= floor) {
-			// 更新maxJob
-			maxJob = 0;
-			for (int i = 1; i < floor; ++i) {
-				if (floorButtonPressed[i] && i > maxJob) {
-					maxJob = i;
-				}
-			}
 			// 更新state
 			if (minJob < floor) {
 				state = down;
 			} else {
 				state = free;
 			}
-			view.changeState(state);
 	    // 下行到最低任务楼层
 		} else if (state == down && minJob >= floor) {
-			// 更新minJob
-			minJob = Floor.totalFloor + 1;
-			for (int i = floor + 1; i <= Floor.totalFloor; ++i) {
-				if (floorButtonPressed[i] && i < minJob) {
-					minJob = i;
-				}
-			}
 			// 更新state
 			if (maxJob > floor) {
 				state = up;
 			} else {
 				state = free;
 			}
-			view.changeState(state);
+		}
+		view.changeState(state);
+		
+		// 更新minJob和maxJob
+		maxJob = 0;
+		minJob = Floor.totalFloor + 1;
+		for (int i = floor + 1; i <= Floor.totalFloor; ++i) {
+			if (floorButtonPressed[i]) {
+				if (i < minJob)
+					minJob = i;
+				if (i > maxJob)
+					maxJob = i;
+			}
 		}
 	}
 	
