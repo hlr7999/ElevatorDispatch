@@ -1,0 +1,6 @@
+.project
+.classpath
+
+App/*.class
+ELevator/*.class
+Floor/*.class
