@@ -49,12 +49,15 @@ class ElevatorView extends JPanel {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			JButton button = (JButton)e.getSource();
-			button.setEnabled(false);
-			button.setBackground(new Color(176, 196, 222));
 			int floor = Integer.parseInt(button.getText());
 			elevator.addJob(floor);
 		}
 	};
+	
+	public void buttonPressed(int i) {
+		floorButton[i].setEnabled(false);
+		floorButton[i].setBackground(new Color(176, 196, 222));
+	}
 	
 	public void changeFloor(int f) {
 		currentFloor.setText(String.valueOf(f));
@@ -118,12 +121,8 @@ public class Elevator {
 	}
 	
 	public void addJob(int f) {
-		if (f > maxJob)
-			maxJob = f;
-		if (f < minJob)
-			minJob = f;
-		
 		floorButtonPressed[f] = true;
+		view.buttonPressed(f);
 		if (state == free) {
 			if (f > floor) {
 				state = up;
@@ -132,9 +131,7 @@ public class Elevator {
 				state = down;
 				view.changeState(state);
 			} else {
-				floorButtonPressed[floor] = false;
 				view.changeState(doorOpen);
-				view.arriveFloor(floor);
 				arriveFloor = true;
 			}
 		}
@@ -162,8 +159,6 @@ public class Elevator {
 		floor += 1;
 		view.changeFloor(floor);
 		if (floorButtonPressed[floor]) {
-			floorButtonPressed[floor] = false;
-			view.arriveFloor(floor);
 			view.changeState(doorOpen);
 			arriveFloor = true;
 		}
@@ -173,14 +168,24 @@ public class Elevator {
 		floor -= 1;
 		view.changeFloor(floor);
 		if (floorButtonPressed[floor]) {
-			floorButtonPressed[floor] = false;
-			view.arriveFloor(floor);
 			view.changeState(doorOpen);
 			arriveFloor = true;
 		}
 	}
 	
 	private void finishJob() {
+		// 更新minJob和maxJob
+		maxJob = 0;
+		minJob = Floor.totalFloor + 1;
+		for (int i = 1; i <= Floor.totalFloor; ++i) {
+			if (floorButtonPressed[i]) {
+				if (i < minJob)
+					minJob = i;
+				if (i > maxJob)
+					maxJob = i;
+			}
+		}
+		
 		// 上行到最高任务楼层
 		if (state == up && maxJob <= floor) {
 			// 更新state
@@ -199,18 +204,8 @@ public class Elevator {
 			}
 		}
 		view.changeState(state);
-		
-		// 更新minJob和maxJob
-		maxJob = 0;
-		minJob = Floor.totalFloor + 1;
-		for (int i = floor + 1; i <= Floor.totalFloor; ++i) {
-			if (floorButtonPressed[i]) {
-				if (i < minJob)
-					minJob = i;
-				if (i > maxJob)
-					maxJob = i;
-			}
-		}
+		floorButtonPressed[floor] = false;
+		view.arriveFloor(floor);
 	}
 	
 	public void add(JPanel panel) {
