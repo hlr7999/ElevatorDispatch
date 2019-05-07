@@ -5,16 +5,12 @@ import java.awt.GridLayout;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
 import Elevator.Elevator;
 import Floor.Floor;
 
 public class App extends JFrame {
 	private JPanel panel = new JPanel();
 	private Floor floor = new Floor();
-	Timer []timers = new Timer[Elevator.totalElevator];
 	Elevator []elevator = new Elevator[Elevator.totalElevator];
 	
     public App() {
@@ -24,14 +20,6 @@ public class App extends JFrame {
     	for (int i = 0; i < Elevator.totalElevator; ++i) {
     		elevator[i] = new Elevator();
     		elevator[i].add(panel);
-    		timers[i] = new Timer(true);
-    	    final int ii = i;
-    		timers[i].schedule(new TimerTask() {
-				@Override
-				public void run() {
-					elevator[ii].run();
-				}
-			}, 0, 1000);
     	}
     	
     	this.add(panel);

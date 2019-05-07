@@ -6,6 +6,8 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -95,6 +97,8 @@ public class Elevator {
 	
 	private ElevatorView view = new ElevatorView(this);
 	private boolean []floorButtonPressed = new boolean[Floor.totalFloor + 1];
+	private Timer timer;
+	private TimerTask timerTask;
 	private int state;
 	private int floor;
 	private int maxJob;
@@ -110,6 +114,14 @@ public class Elevator {
 		for (int i = 0; i <= Floor.totalFloor; ++i) {
 			floorButtonPressed[i] = false;
 		}
+		timer = new Timer(true);
+		timerTask = new TimerTask() {
+			@Override
+			public void run() {
+				start();
+			}
+		};
+		timer.schedule(timerTask, 1500, 1500);
 	}
 	
 	public int getFloor() {
@@ -134,10 +146,23 @@ public class Elevator {
 				view.changeState(doorOpen);
 				arriveFloor = true;
 			}
+			// 重启定时器
+			timer.cancel();
+			timerTask.cancel();
+			timer = null;
+			timerTask = null;
+			timer = new Timer(true);
+			timerTask = new TimerTask() {
+				@Override
+				public void run() {
+					start();
+				}
+			};
+			timer.schedule(timerTask, 1500, 1500);
 		}
 	}
 	
-	public void run() {
+	public void start() {
 		if (arriveFloor) {
 			finishJob();
 			arriveFloor = false;
