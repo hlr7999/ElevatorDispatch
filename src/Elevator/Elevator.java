@@ -140,7 +140,7 @@ public class Elevator {
 				start();
 			}
 		};
-		timer.schedule(timerTask, 1500, 1500);
+		timer.schedule(timerTask, 1800, 1800);
 	}
 	
 	public final int getFloor() {

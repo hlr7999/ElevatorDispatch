@@ -66,8 +66,8 @@ public class Floor extends JPanel {
 			// 如果电梯为非free状态且其所在楼层在要求楼层与direction相反的方向跳过该电梯
 			// 如果电梯运行方向与需求方向相反则跳过该电梯
 			if ( (d2 == 0 && (elevators[i].getState() == direction && !elevators[i].isPause()))
-				|| (direction == elevators[i].getState() && floor < elevators[i].getFloor())
-				|| (direction == elevators[i].getState() && floor > elevators[i].getFloor())
+				|| (elevators[i].getState() == Elevator.up && floor < elevators[i].getFloor())
+				|| (elevators[i].getState() == Elevator.down && floor > elevators[i].getFloor())
 				|| elevators[i].getState() == adverseDirec) {
 				continue;
 			}
@@ -87,7 +87,6 @@ public class Floor extends JPanel {
 			System.out.println("not find");
 		} else {
 		// 若找到了合适的电梯让其接受该任务
-			elevators[elevatorId].addOutJob(floor, direction);
 			switch (direction) {
 			case Elevator.up:
 				upButton[floor].setEnabled(false);
@@ -98,6 +97,7 @@ public class Floor extends JPanel {
 				downButton[floor].setBackground(new Color(176, 196, 222));
 				break;
 			}
+			elevators[elevatorId].addOutJob(floor, direction);
 		}
 	}
 	
