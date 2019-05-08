@@ -97,15 +97,33 @@ public class Elevator {
 	
 	private ElevatorView view = new ElevatorView(this);
 	private boolean []floorButtonPressed = new boolean[Floor.totalFloor + 1];
+	private int []outJobDirection = new int[Floor.totalFloor + 1];
 	private Timer timer;
 	private TimerTask timerTask;
+	private Floor floorView;
 	private int state;
 	private int floor;
 	private int maxJob;
 	private int minJob;
 	private boolean arriveFloor;
 	
-	public Elevator() {
+	private void restartTimer() {
+		timer.cancel();
+		timerTask.cancel();
+		timer = null;
+		timerTask = null;
+		timer = new Timer(true);
+		timerTask = new TimerTask() {
+			@Override
+			public void run() {
+				start();
+			}
+		};
+		timer.schedule(timerTask, 1800, 1800);
+	}
+	
+	public Elevator(Floor f) {
+		floorView = f;
 		state = free;
 		floor = 1;
 		maxJob = 0;
@@ -113,6 +131,7 @@ public class Elevator {
 		arriveFloor = false;
 		for (int i = 0; i <= Floor.totalFloor; ++i) {
 			floorButtonPressed[i] = false;
+			outJobDirection[i] = free;
 		}
 		timer = new Timer(true);
 		timerTask = new TimerTask() {
@@ -124,18 +143,31 @@ public class Elevator {
 		timer.schedule(timerTask, 1500, 1500);
 	}
 	
-	public int getFloor() {
+	public final int getFloor() {
 		return floor;
 	}
 	
-	public int getState() {
+	public final int getState() {
 		return state;
+	}
+	
+	public final boolean isPause() {
+		return arriveFloor;
+	}
+	
+	public void addOutJob(int f, int d) {
+		if (outJobDirection[f] != free) {
+			outJobDirection[f] = -1;
+		} else {
+			outJobDirection[f] = d;
+		}
+		addJob(f);
 	}
 	
 	public void addJob(int f) {
 		floorButtonPressed[f] = true;
 		view.buttonPressed(f);
-		if (state == free) {
+		if (state == free || (f == floor && arriveFloor) ) {
 			if (f > floor) {
 				state = up;
 				view.changeState(state);
@@ -143,28 +175,16 @@ public class Elevator {
 				state = down;
 				view.changeState(state);
 			} else {
-				view.changeState(doorOpen);
-				arriveFloor = true;
+				finishJob();
 			}
 			// 重启定时器
-			timer.cancel();
-			timerTask.cancel();
-			timer = null;
-			timerTask = null;
-			timer = new Timer(true);
-			timerTask = new TimerTask() {
-				@Override
-				public void run() {
-					start();
-				}
-			};
-			timer.schedule(timerTask, 1500, 1500);
+			restartTimer();
 		}
 	}
 	
 	public void start() {
 		if (arriveFloor) {
-			finishJob();
+			view.changeState(state);
 			arriveFloor = false;
 		} else {
 			switch (state) {
@@ -184,8 +204,7 @@ public class Elevator {
 		floor += 1;
 		view.changeFloor(floor);
 		if (floorButtonPressed[floor]) {
-			view.changeState(doorOpen);
-			arriveFloor = true;
+			finishJob();
 		}
 	}
 	
@@ -193,12 +212,14 @@ public class Elevator {
 		floor -= 1;
 		view.changeFloor(floor);
 		if (floorButtonPressed[floor]) {
-			view.changeState(doorOpen);
-			arriveFloor = true;
+			finishJob();
 		}
 	}
 	
 	private void finishJob() {
+		view.changeState(doorOpen);
+		arriveFloor = true;
+		
 		// 更新minJob和maxJob
 		maxJob = 0;
 		minJob = Floor.totalFloor + 1;
@@ -228,9 +249,18 @@ public class Elevator {
 				state = free;
 			}
 		}
-		view.changeState(state);
 		floorButtonPressed[floor] = false;
+		
+		// 修改按钮可用
 		view.arriveFloor(floor);
+		if (outJobDirection[floor] == -1) {
+			floorView.finishJob(floor, Elevator.up);
+			floorView.finishJob(floor, Elevator.down);
+			outJobDirection[floor] = free;
+		} else if (outJobDirection[floor] != free) {
+			floorView.finishJob(floor, outJobDirection[floor]);
+			outJobDirection[floor] = free;
+		}
 	}
 	
 	public void add(JPanel panel) {

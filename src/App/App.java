@@ -10,15 +10,15 @@ import Floor.Floor;
 
 public class App extends JFrame {
 	private JPanel panel = new JPanel();
-	private Floor floor = new Floor();
-	Elevator []elevator = new Elevator[Elevator.totalElevator];
+	private Elevator []elevator = new Elevator[Elevator.totalElevator];
+	private Floor floor = new Floor(elevator);
 	
     public App() {
     	panel.setLayout(new GridLayout(1, Elevator.totalElevator+1, 20, 0));
     	panel.add(floor);
     	
     	for (int i = 0; i < Elevator.totalElevator; ++i) {
-    		elevator[i] = new Elevator();
+    		elevator[i] = new Elevator(floor);
     		elevator[i].add(panel);
     	}
     	
