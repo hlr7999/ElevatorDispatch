@@ -102,6 +102,10 @@ public class Elevator {
 	private TimerTask timerTask;
 	private Floor floorView;
 	private int state;
+	// 电梯接受外部任务后order和state可能不一致
+	private int order;
+	private int tempState;
+	private boolean changeOrder;
 	private int floor;
 	private int maxJob;
 	private int minJob;
@@ -124,7 +128,8 @@ public class Elevator {
 	
 	public Elevator(Floor f) {
 		floorView = f;
-		state = free;
+		order = state = free;
+		changeOrder = false;
 		floor = 1;
 		maxJob = 0;
 		minJob = Floor.totalFloor + 1;
@@ -151,39 +156,51 @@ public class Elevator {
 		return state;
 	}
 	
+	public final int getOrder() {
+		return order;
+	}
+	
 	public final boolean isPause() {
 		return arriveFloor;
 	}
 	
 	public void addOutJob(int f, int d) {
-		if (outJobDirection[f] != free) {
-			outJobDirection[f] = -1;
-		} else {
-			outJobDirection[f] = d;
+		if (order == free) {
+			order = d;
 		}
+		outJobDirection[f] = d;
 		addJob(f);
 	}
 	
 	public void addJob(int f) {
 		floorButtonPressed[f] = true;
 		view.buttonPressed(f);
+		int tempState = state;
 		if (state == free || (f == floor && arriveFloor) ) {
 			if (f > floor) {
 				state = up;
-				view.changeState(state);
 			} else if (f < floor) {
 				state = down;
-				view.changeState(state);
 			} else {
 				finishJob();
+				restartTimer();
 			}
-			// 重启定时器
-			restartTimer();
+			if(!arriveFloor) {
+				// 重启定时器
+				restartTimer();
+				view.changeState(state);
+			}
+		}
+		if (order == tempState) {
+			order = state;
 		}
 	}
 	
 	public void start() {
 		if (arriveFloor) {
+			if (changeOrder) {
+				state = order = tempState;
+			}
 			view.changeState(state);
 			arriveFloor = false;
 		} else {
@@ -232,6 +249,7 @@ public class Elevator {
 			}
 		}
 		
+		int tempState = state;
 		// 上行到最高任务楼层
 		if (state == up && maxJob <= floor) {
 			// 更新state
@@ -250,14 +268,19 @@ public class Elevator {
 			}
 		}
 		floorButtonPressed[floor] = false;
+		if (order == tempState) {
+			order = state;
+		}
 		
 		// 修改按钮可用
 		view.arriveFloor(floor);
-		if (outJobDirection[floor] == -1) {
-			floorView.finishJob(floor, Elevator.up);
-			floorView.finishJob(floor, Elevator.down);
-			outJobDirection[floor] = free;
-		} else if (outJobDirection[floor] != free) {
+		if (outJobDirection[floor] != free) {
+			if (tempState != order) {
+				changeOrder = true;
+				int temp = tempState;
+				tempState = state;
+				state = temp;
+			}
 			floorView.finishJob(floor, outJobDirection[floor]);
 			outJobDirection[floor] = free;
 		}

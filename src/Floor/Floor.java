@@ -101,7 +101,8 @@ public class Floor extends JPanel {
 			if ( (d2 == 0 && (elevators[i].getState() == direction && !elevators[i].isPause()))
 				|| (elevators[i].getState() == Elevator.up && floor < elevators[i].getFloor())
 				|| (elevators[i].getState() == Elevator.down && floor > elevators[i].getFloor())
-				|| elevators[i].getState() == adverseDirec) {
+				|| elevators[i].getState() == adverseDirec
+				|| elevators[i].getOrder() == adverseDirec ) {
 				continue;
 			}
 			// 选距离更小者
