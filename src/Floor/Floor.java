@@ -6,6 +6,10 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -19,6 +23,7 @@ public class Floor extends JPanel {
 	private JButton []upButton = new JButton[totalFloor + 1];
 	private JButton []downButton = new JButton[totalFloor + 1];
 	private Elevator []elevators;
+	private LinkedList<Integer> noDispatchedJob = new LinkedList<Integer>();
 	
 	public Floor(Elevator []es) {
 		elevators = es;
@@ -53,9 +58,37 @@ public class Floor extends JPanel {
 			}
 			this.add(downButton[i]);
 		}
+		
+		Timer timer = new Timer(true);
+		TimerTask timerTask = new TimerTask() {
+			@Override
+			public void run() {
+				lookUpJobDispatch();
+			}
+		};
+		timer.schedule(timerTask, 1000, 1000);
+
 	}
 	
-	private void schedule(int floor, int direction) {
+	private void lookUpJobDispatch() {
+		ArrayList<Integer> delList = new ArrayList<Integer>();
+		for (int i : noDispatchedJob) {
+			int direction;
+			int f = i;
+			if (i > totalFloor) {
+				f -= totalFloor;
+				direction = Elevator.down;
+			} else {
+				direction = Elevator.up;
+			}
+			if (schedule(f, direction, true)) {
+				delList.add(new Integer(i));
+			}
+		}
+		noDispatchedJob.removeAll(delList);
+	}
+	
+	private boolean schedule(int floor, int direction, boolean fromLookUp) {
 		int adverseDirec = Elevator.up + Elevator.down - direction;
 		int distance = totalFloor + 1;
 		int elevatorId = -1;
@@ -84,20 +117,21 @@ public class Floor extends JPanel {
 		}
 		// 若没找到合适的电梯则将其加入任务列表
 		if (elevatorId == -1) {
-			System.out.println("not find");
+			if (!fromLookUp) {
+				switch (direction) {
+				case Elevator.up:
+					noDispatchedJob.add(floor);
+					break;
+				case Elevator.down:
+					noDispatchedJob.add(floor + totalFloor);
+					break;
+				}
+			}
+			return false;
 		} else {
 		// 若找到了合适的电梯让其接受该任务
-			switch (direction) {
-			case Elevator.up:
-				upButton[floor].setEnabled(false);
-				upButton[floor].setBackground(new Color(176, 196, 222));
-				break;
-			case Elevator.down:
-				downButton[floor].setEnabled(false);
-				downButton[floor].setBackground(new Color(176, 196, 222));
-				break;
-			}
 			elevators[elevatorId].addOutJob(floor, direction);
+			return true;
 		}
 	}
 	
@@ -118,9 +152,11 @@ public class Floor extends JPanel {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			JButton button = (JButton)e.getSource();
+			button.setEnabled(false);
+			button.setBackground(new Color(176, 196, 222));
 			String text = button.getText();
 			int floor = Integer.parseInt(text.substring(0, text.length()-1));
-			schedule(floor, Elevator.up);
+			schedule(floor, Elevator.up, false);
 		}
 	};
 	
@@ -128,9 +164,11 @@ public class Floor extends JPanel {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			JButton button = (JButton)e.getSource();
+			button.setEnabled(false);
+			button.setBackground(new Color(176, 196, 222));
 			String text = button.getText();
 			int floor = Integer.parseInt(text.substring(0, text.length()-1));
-			schedule(floor, Elevator.down);
+			schedule(floor, Elevator.down, false);
 		}
 	};
 }
